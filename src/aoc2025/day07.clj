@@ -41,10 +41,44 @@
 
 ;; part 2
 
+(defn build-split->tachyons
+  "Returns a map from splitters to where the resulting tachyons continue.
+  For example: (#{7} #{6 8} #{5 ..} ..) ; splitter columns
+  results in:  {[0 7] #{[1 6] [1 8]}, ; splitter row/col to tachyon row/col
+                [1 6] #{[2 5] ..}, ..}."
+  [splitter-levels]
+  (reduce-kv (fn [acc row splitter-line]
+               (reduce (fn [acc splitter-col]
+                         (assoc acc
+                                [row splitter-col]
+                                #{[(inc row) (dec splitter-col)]
+                                  [(inc row) (inc splitter-col)]}))
+                       acc
+                       splitter-line))
+             {}
+             (vec splitter-levels)))
+
+(def count-tachyon-paths
+  "Returns the number of paths from the given row/col to the very bottom.
+  Uses memoization for caching.
+  Fn args are `[{:keys [split->tachyons height] :as teleporter} [r c :as rc]]`,
+  with `split->tachyons` being a map {rc1 (rc2 ..) ..} and `rc` being the
+  row/col to start counting from."
+  (memoize
+    (fn [{:keys [split->tachyons height] :as teleporter} [r c :as rc]]
+      (if (= r height)
+        1
+        (->> (split->tachyons rc #{[(inc r) c]})
+             (map #(count-tachyon-paths teleporter %))
+             (reduce +))))))
+
 (defn part-2
   []
-  (->> (parse-input)
-       count))
+  (let [[start & splitter-levels] (parse-input)]
+    (count-tachyon-paths
+      {:split->tachyons (build-split->tachyons splitter-levels)
+       :height (-> splitter-levels count)}
+      [0 (first start)])))
 
 (comment
   (set! *warn-on-reflection* true)
