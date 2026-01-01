@@ -10,6 +10,6 @@ Clojure 1.12
 
 Start clojure with an nREPL:
 
-`clj -A:test -Spath -M -m nrepl.cmdline -i`
+`clj -M:cider`
 
 And then connect your editor to the nREPL.
